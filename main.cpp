@@ -19,21 +19,21 @@ bool stillalive=1, este_ascuns=0;
 void initializare_hol(int k)
 {
     int i,j;
-    if(k==8)
+    if(k == 8)
     {
-        for(i=0; i<=9; i++)
-            for(j=0; j<=24; j++)
-                if(i==0 || i==9) camera[k][i][j]='_';
-                else if(j==0 || j==24) camera[k][i][j]='|';
+        for(i = 0; i <= 9; i++)
+            for(j = 0; j <= 24; j++)
+                if(i==0 || i==9) camera[k][i][j] = '_';
+                else if(j== 0 || j== 24) camera[k][i][j] = '|';
                 else camera[k][i][j]=' ';
     }
     else
     {
-        for(i=0; i<=9; i++)
-            for(j=0; j<=24; j++)
-                if(i==0 || i==9) camera[k][i][j]='_';
-                else if(j==0 || j==24) camera[k][i][j]='|';
-                else if(i>=3 && i<=6 && j>=4 && j<=20)camera[k][i][j]='#';
+        for(i = 0; i <= 9; i++)
+            for(j = 0; j <= 24; j++)
+                if(i == 0 || i == 9) camera[k][i][j] = '_';
+                else if(j==0 || j==24) camera[k][i][j] = '|';
+                else if(i>=3 && i<=6 && j>=4 && j<=20)camera[k][i][j] = '#';
                 else camera[k][i][j]=' ';
     }
     camera[k][9][0]='|';
@@ -240,8 +240,7 @@ void ascuns(bool &indulap, int &event, int k, int iesy, int y, int x)
             }
         camera[k][y][x]=player;
     }
-    if(event==1)
-        event=0;
+    event = event == 1 ?  0 : event;
     indulap=1;
     char comanda='\0';
     while(comanda=='\0')comanda=getch();
@@ -412,7 +411,7 @@ void jocul_principal(int k,int tip_camera_generata, int event,bool &player_alive
                 break;
             }
             else if(camera[k][y-1][x]=='D')miscari+=2,player_alive=1,ascuns(este_ascuns,event,k,iesy,y,x);
-            else break;
+            break;
         }
         case 'a':
         {
@@ -433,7 +432,7 @@ void jocul_principal(int k,int tip_camera_generata, int event,bool &player_alive
                 break;
             }
             else if(camera[k][y][x-1]=='D')miscari+=2,player_alive=1,ascuns(este_ascuns,event,k,iesy,y,x);
-            else break;
+            break;
         }
         case 'd':
         {
@@ -454,7 +453,7 @@ void jocul_principal(int k,int tip_camera_generata, int event,bool &player_alive
                 break;
             }
             else if(camera[k][y][x+1]=='D')miscari+=2,player_alive=1,ascuns(este_ascuns,event,k,iesy,y,x);
-            else break;
+            break;
         }
         case 's':
         {
@@ -475,7 +474,7 @@ void jocul_principal(int k,int tip_camera_generata, int event,bool &player_alive
                 break;
             }
             else if(camera[k][y+1][x]=='D')miscari+=2,player_alive=1,ascuns(este_ascuns,event,k,iesy,y,x);
-            else break;
+            break;
         }
         }
         Sleep(30);
@@ -562,7 +561,7 @@ void cursahol(bool &player_alive,int camere)
     hol_cursa();
     holcursa[5][0]=player;
     player_alive=1;
-    char charprec=' ',comanda,smiley=1,charprecs=' ';
+    char charprec=' ',comanda,smiley='@',charprecs=' ';
     int x=0,y=5,xs=0,ys=5,pxs,pys;
     bool spawn=0;
     pxs=xs;
@@ -587,9 +586,8 @@ void cursahol(bool &player_alive,int camere)
                 charprec=holcursa[y-1][x];
                 holcursa[y-1][x]='o';
                 --y;
-                break;
             }
-            else break;
+            break;
         }
         case 'a':
         {
@@ -599,9 +597,8 @@ void cursahol(bool &player_alive,int camere)
                 charprec=holcursa[y][x-1];
                 holcursa[y][x-1]='o';
                 --x;
-                break;
             }
-            else break;
+            break;
         }
         case 'd':
         {
@@ -611,9 +608,8 @@ void cursahol(bool &player_alive,int camere)
                 charprec=holcursa[y][x+1];
                 holcursa[y][x+1]='o';
                 ++x;
-                break;
             }
-            else break;
+            break;
         }
         case 's':
         {
@@ -623,9 +619,8 @@ void cursahol(bool &player_alive,int camere)
                 charprec=holcursa[y+1][x];
                 holcursa[y+1][x]='o';
                 ++y;
-                break;
             }
-            else break;
+            break;
         }
         }
         if(x>=4) spawn=1;
@@ -701,7 +696,7 @@ void cursahol(bool &player_alive,int camere)
         }
         Sleep(30);
         system("cls");
-        if(spawn && (holcursa[ys][xs+1]=='o'||holcursa[ys][xs-1]=='o'||holcursa[ys-1][xs]=='o'||holcursa[ys+1][xs]=='o'||holcursa[ys][xs]=='o'))
+        if(spawn && ys == y && xs == x)
         {
             player_alive=0;
             for(i=0; i<=9; i++)
@@ -714,7 +709,7 @@ void cursahol(bool &player_alive,int camere)
     stillalive=player_alive;
 }
 
-void Help()
+void Help(void)
 {
     char comanda='\0';
     system("cls");
@@ -734,7 +729,7 @@ void Help()
 
 }
 
-void meniu_principal()
+void meniu_principal(void)
 {
     char litera;
     cout<<"\033[1m\033[33m-+-Escape Room-+-"<<'\n'<<"Face o selectie folosind una dintre literele de mai jos.\033[0m"<<'\n';
@@ -742,6 +737,7 @@ void meniu_principal()
     cout<<"\033[1m\033[35mh -> Ajutor\033[0m"<<'\n';
     cout<<"\033[1m\033[31mq -> Iesire din joc\033[0m"<<'\n';
     litera=_getch();
+    camere_parcurse = 90;
     switch(litera)
     {
     case 'p':
@@ -787,8 +783,7 @@ void meniu_principal()
     }
     case 'q':
     {
-        system("taskkill /f /im cb_console_runner.exe");
-        break;
+        return;
     }
     default:
     {
