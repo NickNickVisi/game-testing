@@ -40,22 +40,22 @@ typedef struct {
 	room_node *tail;
 } room_list;
 
-static room_node *init_room(int height)
+static room_node *init_room(void)
 {
 	room_node *room = (room_node *)malloc(sizeof(room_node));
 	int rand_length = rand() % 2;
 	int rand_event = rand() % 2;
 
 	room->width = rand_length ? SHORT_ROOM_LENGTH : LONG_ROOM_LENGTH;
-	room->height = height;
-	room->matrix = malloc(height * sizeof(char *));
-	for (int i = 0; i < height; i++) {
+	room->height = 10;
+	room->matrix = malloc(10 * sizeof(char *));
+	for (int i = 0; i < 10; i++) {
 		room->matrix[i] = malloc(room->width);
 		memset(room->matrix[i], ' ', room->width);
 	}
 	for (int i = 0; i < room->width; i++)
-		room->matrix[0][i] = room->matrix[height - 1][i] = '#';
-	for (int i = 0; i < height; i++)
+		room->matrix[0][i] = room->matrix[9][i] = '#';
+	for (int i = 0; i < 10; i++)
 		room->matrix[i][0] = room->matrix[i][room->width - 1] = '#';
 	room->exit = malloc(sizeof(coordinates));
 	room->entrance = malloc(sizeof(coordinates));
@@ -68,7 +68,7 @@ static room_node *init_room(int height)
 		room->exit->x = room->width - 1;
 		room->entrance->x = 0;
 	}
-	room->matrix[height / 2][room->width - 1] = room->matrix[height / 2][0] = ' ';
+	room->matrix[5][room->width - 1] = room->matrix[5][0] = ' ';
 	room->next = '\0';
 	return room;
 }
@@ -78,10 +78,10 @@ static room_list *generate_list(void)
 	int counter = 4;
 	room_list *list = malloc(sizeof(room_list));
 
-	list->head = init_room(10);
+	list->head = init_room();
 	room_node *current = list->head;
 	while(counter) {
-		current->next = init_room(10);
+		current->next = init_room();
 		current = current->next;
 		counter--;
 	}
@@ -119,25 +119,29 @@ int main(void)
 	initscr();
 	noecho();
 	cbreak();
+	curs_set(0);
 	srand(time(0));
-	char command = '\0';
 	int counter = 0;
+	char command = '\0';
 	room_list *list = generate_list();
 
+	printw("%d\n", counter);
+	for (int i = 0; i < list->head->height; i++) {
+		for (int j = 0; j < list->head->width; j++)
+			addch(list->head->matrix[i][j]);
+		addch('\n');
+	}
 	p->x = list->head->entrance->x;
 	p->y = list->head->entrance->y;
+	move(p->y + 1, p->x);
+	addch('o');
+	refresh();
 	while(command != 'q')
 	{
-		printw("%d\n", counter);
-		list->head->matrix[p->y][p->x] = 'o';
-		for (int i = 0; i < list->head->height; i++) {
-			for (int j = 0; j < list->head->width; j++)
-				addch(list->head->matrix[i][j]); // printw if no longer efficient
-			addch('\n');
-		}
 		command = getch();
-		list->head->matrix[p->y][p->x] = ' ';
-		clear();
+		move(p->y + 1, p->x);
+		addch(' ');
+		refresh();
 		switch(command)
 		{
 			case 'w': {
@@ -161,21 +165,33 @@ int main(void)
 				break;
 			}
 		}
+		move(p->y + 1, p->x);
+		addch('o');
+		refresh();
 		if (p->x == list->head->exit->x && p->y == list->head->exit->y) {
-			counter++;
-			room_node *clear = list->head;
+			room_node *delete = list->head;
 
 			if (list->head->next) {
 				list->head = list->head->next;
-				free_list_node(clear);
+				free_list_node(delete);
 			}
 			if (!(counter % 5)) {
 				free_list(list);
 				list = generate_list();
-				printw("Generated new room list.\n");
+			}
+			clear();
+			counter++;
+			printw("%d\n", counter);
+			for (int i = 0; i < list->head->height; i++) {
+				for (int j = 0; j < list->head->width; j++)
+					addch(list->head->matrix[i][j]);
+				addch('\n');
 			}
 			p->x = list->head->entrance->x;
 			p->y = list->head->entrance->y;
+			move(p->y + 1, p->x);
+			addch('o');
+			refresh();
 		}
 	}
 	free(p);
