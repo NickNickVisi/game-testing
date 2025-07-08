@@ -1,14 +1,15 @@
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
 #include <time.h>
 #include <string.h>
-
+#include <unistd.h>
 // has_colors(); useful
 
 /*
 IDEAS:
-Effects for outside rooms (rain), probably use some other function that sets a certain part of the screen, also randomly generated and drops disappear upon touching player
 Darkness from original
 Same chase mechanics yet better room generating by using some pathfinder algorithm
 
@@ -17,12 +18,18 @@ Same chase mechanics yet better room generating by using some pathfinder algorit
 
 #define LONG_ROOM_LENGTH 64
 #define SHORT_ROOM_LENGTH 32
-
+#define TICK 60
+#define MAX_RAIN 100
 
 typedef struct {
 	int x;
 	int y;
 } coordinates;
+
+typedef struct {
+	coordinates rain_cords;
+	int not_hit;
+} rain_drops;
 
 typedef struct room_node room_node;
 
@@ -112,16 +119,56 @@ static void free_list(room_list *list)
 	free(list);
 }
 
+static unsigned current_time(void)
+{
+	struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000UL) + (ts.tv_nsec / 1000000UL);
+}
+
+static void spawn_rain(int width, rain_drops *rain)
+{
+	for (int i = 0; i < MAX_RAIN; i++) {
+        if (!rain[i].not_hit) {
+            rain[i].rain_cords.x = rand() % width - 1;
+			if (!rain[i].rain_cords.x)
+				rain[i].rain_cords.x = 1;
+            rain[i].rain_cords.y = 2;
+            rain[i].not_hit = 1;
+            break;
+        }
+    }
+}
+
+static void update_rain(room_node *room, rain_drops *rain) {
+	spawn_rain(room->width, rain);
+	for (int i = 0; i < MAX_RAIN; i++) {
+        if (rain[i].not_hit) {
+			int x = rain[i].rain_cords.x;
+			int y = rain[i].rain_cords.y;
+            mvaddch(y, x, room->matrix[y - 1][x]);
+            y = ++rain[i].rain_cords.y;
+			x = --rain[i].rain_cords.x;
+            if (y >= 10 || x == 0 || room->matrix[y - 1][x] == 'o')
+                rain[i].not_hit = 0;
+            else
+                mvaddch(y, x, '/');
+        }
+    }
+}
+
 int main(void)
 {
 	coordinates *p = malloc(sizeof(coordinates));
 
 	initscr();
+	nodelay(stdscr, TRUE);
 	noecho();
 	cbreak();
 	curs_set(0);
 	srand(time(0));
 	int counter = 0;
+	unsigned long last_tick = current_time();
 	char command = '\0';
 	room_list *list = generate_list();
 
@@ -136,38 +183,49 @@ int main(void)
 	move(p->y + 1, p->x);
 	addch('o');
 	refresh();
-	while(command != 'q')
+	int running = 1;
+	rain_drops *rain = malloc(sizeof(rain_drops) * MAX_RAIN);
+
+	while(running && command != 'q')
 	{
+		unsigned long now = current_time();
 		command = getch();
-		move(p->y + 1, p->x);
-		addch(' ');
-		refresh();
-		switch(command)
-		{
-			case 'w': {
-				if (list->head->matrix[p->y - 1][p->x] == ' ')
-					p->y--;
-				break;
+		
+		if (command != -1) {
+			mvaddch(p->y + 1, p->x, ' ');
+			list->head->matrix[p->y][p->x] = ' ';
+			switch(command)
+			{
+				case 'w': {
+					if (list->head->matrix[p->y - 1][p->x] == ' ')
+						p->y--;
+					break;
+				}
+				case 's': {
+					if (list->head->matrix[p->y + 1][p->x] == ' ')
+						p->y++;
+					break;
+				}
+				case 'a': {
+					if (list->head->matrix[p->y][p->x - 1] == ' ')
+						p->x--;
+					break;
+				}
+				case 'd': {
+					if (list->head->matrix[p->y][p->x + 1] == ' ')
+						p->x++;
+					break;
+				}
 			}
-			case 's': {
-				if (list->head->matrix[p->y + 1][p->x] == ' ')
-					p->y++;
-				break;
-			}
-			case 'a': {
-				if (list->head->matrix[p->y][p->x - 1] == ' ')
-					p->x--;
-				break;
-			}
-			case 'd': {
-				if (list->head->matrix[p->y][p->x + 1] == ' ')
-					p->x++;
-				break;
-			}
+			list->head->matrix[p->y][p->x] = 'o';
+			mvaddch(p->y + 1, p->x, 'o');
+			refresh();
 		}
-		move(p->y + 1, p->x);
-		addch('o');
-		refresh();
+		if (now - last_tick >= TICK) {
+			last_tick = now;
+			update_rain(list->head, rain);
+			refresh();
+		}
 		if (p->x == list->head->exit->x && p->y == list->head->exit->y) {
 			room_node *delete = list->head;
 
@@ -189,10 +247,10 @@ int main(void)
 			}
 			p->x = list->head->entrance->x;
 			p->y = list->head->entrance->y;
-			move(p->y + 1, p->x);
-			addch('o');
+			mvaddch(p->y + 1, p->x, 'o');
 			refresh();
 		}
+		usleep(1000);
 	}
 	free(p);
 	free_list(list);
