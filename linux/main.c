@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 199309L
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
@@ -37,6 +35,7 @@ struct room_node {
 	char **matrix;
 	int width;
 	int height;
+	int event;
 	coordinates *exit;
 	coordinates *entrance;
 	room_node *next;
@@ -51,7 +50,7 @@ static room_node *init_room(void)
 {
 	room_node *room = (room_node *)malloc(sizeof(room_node));
 	int rand_length = rand() % 2;
-	int rand_event = rand() % 2;
+	room->event = rand() % 3;
 
 	room->width = rand_length ? SHORT_ROOM_LENGTH : LONG_ROOM_LENGTH;
 	room->height = 10;
@@ -68,12 +67,13 @@ static room_node *init_room(void)
 	room->entrance = malloc(sizeof(coordinates));
 	room->exit->y = room->height / 2;
 	room->entrance->y = room->height / 2;
-	if(!rand_event) {
-		room->entrance->x = room->width - 1;
-		room->exit->x = 0;
-	} else {
-		room->exit->x = room->width - 1;
-		room->entrance->x = 0;
+	room->exit->x = room->width - 1;
+	room->entrance->x = 0;
+	switch (room->event) {
+		case 1: {
+			room->entrance->x = room->width - 1;
+			room->exit->x = 0;
+		}
 	}
 	room->matrix[5][room->width - 1] = room->matrix[5][0] = ' ';
 	room->next = '\0';
@@ -122,7 +122,7 @@ static void free_list(room_list *list)
 static unsigned current_time(void)
 {
 	struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    clock_gettime(1, &ts);
     return (ts.tv_sec * 1000UL) + (ts.tv_nsec / 1000000UL);
 }
 
@@ -155,6 +155,17 @@ static void update_rain(room_node *room, rain_drops *rain) {
                 mvaddch(y, x, '/');
         }
     }
+}
+
+static void flashlight(room_node *room, int x, int y, int *radius)
+{
+	if (radius) {
+		radius -= 1;
+		flashlight(room, x + 1, y, &radius);
+		flashlight(room, x, y + 1, &radius);
+		flashlight(room, x - 1, y, &radius);
+		flashlight(room, x, y - 1, &radius);
+	}
 }
 
 int main(void)
@@ -223,7 +234,9 @@ int main(void)
 		}
 		if (now - last_tick >= TICK) {
 			last_tick = now;
-			update_rain(list->head, rain);
+			if (list->head->event == 2) {
+				update_rain(list->head, rain);
+			}
 			refresh();
 		}
 		if (p->x == list->head->exit->x && p->y == list->head->exit->y) {
@@ -236,6 +249,9 @@ int main(void)
 			if (!(counter % 5)) {
 				free_list(list);
 				list = generate_list();
+			}
+			for (int i = 0; i < MAX_RAIN; i++) {
+				rain[i].not_hit = 0;
 			}
 			clear();
 			counter++;
@@ -250,7 +266,6 @@ int main(void)
 			mvaddch(p->y + 1, p->x, 'o');
 			refresh();
 		}
-		usleep(1000);
 	}
 	free(p);
 	free_list(list);
