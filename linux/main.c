@@ -8,8 +8,8 @@
 
 /*
 IDEAS:
-Darkness from original
 Same chase mechanics yet better room generating by using some pathfinder algorithm
+Code guesser with 4 exits
 
 
 */
@@ -122,39 +122,39 @@ static void free_list(room_list *list)
 static unsigned current_time(void)
 {
 	struct timespec ts;
-    clock_gettime(1, &ts);
-    return (ts.tv_sec * 1000UL) + (ts.tv_nsec / 1000000UL);
+	clock_gettime(1, &ts);
+	return (ts.tv_sec * 1000UL) + (ts.tv_nsec / 1000000UL);
 }
 
 static void spawn_rain(int width, rain_drops *rain)
 {
 	for (int i = 0; i < MAX_RAIN; i++) {
-        if (!rain[i].not_hit) {
-            rain[i].rain_cords.x = rand() % width - 1;
+		if (!rain[i].not_hit) {
+			rain[i].rain_cords.x = rand() % width - 1;
 			if (!rain[i].rain_cords.x)
 				rain[i].rain_cords.x = 1;
-            rain[i].rain_cords.y = 2;
-            rain[i].not_hit = 1;
-            break;
-        }
-    }
+			rain[i].rain_cords.y = 2;
+			rain[i].not_hit = 1;
+			break;
+		}
+	}
 }
 
 static void update_rain(room_node *room, rain_drops *rain) {
 	spawn_rain(room->width, rain);
 	for (int i = 0; i < MAX_RAIN; i++) {
-        if (rain[i].not_hit) {
+		if (rain[i].not_hit) {
 			int x = rain[i].rain_cords.x;
 			int y = rain[i].rain_cords.y;
-            mvaddch(y, x, room->matrix[y - 1][x]);
-            y = ++rain[i].rain_cords.y;
+			mvaddch(y, x, room->matrix[y - 1][x]);
+			y = ++rain[i].rain_cords.y;
 			x = --rain[i].rain_cords.x;
-            if (y >= 10 || x == 0 || room->matrix[y - 1][x] == 'o')
-                rain[i].not_hit = 0;
-            else
-                mvaddch(y, x, '/');
-        }
-    }
+			if (y >= 10 || x == 0 || room->matrix[y - 1][x] == 'o')
+				rain[i].not_hit = 0;
+			else
+				mvaddch(y, x, '/');
+		}
+	}
 }
 
 static void flashlight(coordinates *p, room_node *room, int x, int y, int radius)
@@ -178,6 +178,7 @@ static void flashlight(coordinates *p, room_node *room, int x, int y, int radius
 	flashlight(p, room, x, y - 1, radius - 1);
 }
 
+// Breakk up void into more functions
 int main(void)
 {
 	coordinates *p = malloc(sizeof(coordinates));
@@ -225,22 +226,22 @@ int main(void)
 			switch(command)
 			{
 				case 'w': {
-					if (list->head->matrix[p->y - 1][p->x] == ' ')
+					if (p->y - 1 > 0 && list->head->matrix[p->y - 1][p->x] != '#')
 						p->y--;
 					break;
 				}
 				case 's': {
-					if (list->head->matrix[p->y + 1][p->x] == ' ')
+					if (p->y + 1 < 10 && list->head->matrix[p->y + 1][p->x] != '#')
 						p->y++;
 					break;
 				}
 				case 'a': {
-					if (list->head->matrix[p->y][p->x - 1] == ' ')
+					if (p->x > 0 && list->head->matrix[p->y][p->x - 1] != '#')
 						p->x--;
 					break;
 				}
 				case 'd': {
-					if (list->head->matrix[p->y][p->x + 1] == ' ')
+					if (p->x < list->head->width - 1 && list->head->matrix[p->y][p->x + 1] != '#')
 						p->x++;
 					break;
 				}
@@ -292,6 +293,8 @@ int main(void)
 			mvaddch(p->y + 1, p->x, 'o');
 		}
 		refresh();
+		// give processor a break
+		usleep(1000);
 	}
 	free(p);
 	free_list(list);
