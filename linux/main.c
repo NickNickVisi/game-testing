@@ -49,10 +49,9 @@ typedef struct {
 static room_node *init_room(void)
 {
 	room_node *room = (room_node *)malloc(sizeof(room_node));
-	int rand_length = rand() % 2;
 	room->event = rand() % 4;
 
-	room->width = rand_length ? SHORT_ROOM_LENGTH : LONG_ROOM_LENGTH;
+	room->width = rand() % 2 ? SHORT_ROOM_LENGTH : LONG_ROOM_LENGTH;
 	room->height = 10;
 	room->matrix = malloc(10 * sizeof(char *));
 	for (int i = 0; i < 10; i++) {
@@ -159,9 +158,8 @@ static void update_rain(room_node *room, rain_drops *rain) {
 
 static void flashlight(coordinates *p, room_node *room, int x, int y, int radius)
 {
-	if (!radius || x < 0 || y < 0 || y >= 10 || x >= room->width) {
+	if (!radius || x < 0 || y < 0 || y >= 10 || x >= room->width)
 		return;
-	}
 	int dx = x - p->x;
 	int dy = y - p->y;
 	int sqr_distance = dx * dx + dy * dy;
@@ -178,10 +176,23 @@ static void flashlight(coordinates *p, room_node *room, int x, int y, int radius
 	flashlight(p, room, x, y - 1, radius - 1);
 }
 
-// Breakk up void into more functions
+
+// Implement BFS, probably add a matrix with 1s and 0s for not running into anything
+static void update_chase(coordinates *player, coordinates *enemy, room_node *room)
+{
+	mvaddch(enemy->y, enemy->x, room->matrix[enemy->y - 1][enemy->x]);
+	if (enemy->y == player->y) {
+
+	}
+	mvaddch(enemy->y, enemy->x, '@');
+}
+
+// Break up into more functions
 int main(void)
 {
 	coordinates *p = malloc(sizeof(coordinates));
+	coordinates *enemy = malloc(sizeof(coordinates));
+	enemy->y = 5;
 
 	initscr();
 	nodelay(stdscr, TRUE);
@@ -217,6 +228,7 @@ int main(void)
 
 	while(running && command != 'q')
 	{
+		enemy->x = list->head->width - 2;
 		unsigned long now = current_time();
 		command = getch();
 		
@@ -257,6 +269,7 @@ int main(void)
 			if (list->head->event == 2) {
 				update_rain(list->head, rain);
 			}
+			update_chase(p, enemy, list->head);
 		}
 		if (p->x == list->head->exit->x && p->y == list->head->exit->y) {
 			room_node *delete = list->head;
