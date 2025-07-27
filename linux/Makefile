@@ -1,5 +1,5 @@
 CC=gcc
-SOURCES=$(wildcard *.c)
+SOURCES=main.c
 
 build:
 	$(CC) $(SOURCES) -lncurses -o main

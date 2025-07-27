@@ -176,15 +176,36 @@ static void flashlight(coordinates *p, room_node *room, int x, int y, int radius
 	flashlight(p, room, x, y - 1, radius - 1);
 }
 
+typedef struct a_star_node a_star_node;
 
-// Implement BFS, probably add a matrix with 1s and 0s for not running into anything
+struct a_star_node {
+	int x, y;
+	/* f is total cost(g + h), g is the cost from start, h is heuristic */
+	int f, g, h;
+	a_star_node *parent;
+	int is_obstacle;
+	int is_open_list;
+	int is_closed_list;
+};
+
+static int abs_val(int x)
+{
+	if (x < 0)
+		return -x;
+	return x;
+}
+
+static int heuristic(a_star_node *a, a_star_node *b)
+{
+	return abs_val(a->x - a->y) + abs_val(b->x - b->y);
+}
+
+
+
+// attempted A* implementation
 static void update_chase(coordinates *player, coordinates *enemy, room_node *room)
 {
-	mvaddch(enemy->y, enemy->x, room->matrix[enemy->y - 1][enemy->x]);
-	if (enemy->y == player->y) {
-
-	}
-	mvaddch(enemy->y, enemy->x, '@');
+	
 }
 
 // Break up into more functions
@@ -269,7 +290,7 @@ int main(void)
 			if (list->head->event == 2) {
 				update_rain(list->head, rain);
 			}
-			update_chase(p, enemy, list->head);
+			// update_chase(p, enemy, list->head);
 		}
 		if (p->x == list->head->exit->x && p->y == list->head->exit->y) {
 			room_node *delete = list->head;
