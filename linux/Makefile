@@ -1,8 +1,13 @@
 CC=gcc
-SOURCES=main.c
+BUILD_DIR=build
+SOURCE_DIR=src
+SOURCES=$(wildcard $(SOURCE_DIR)/*.c)
+INCLUDE_DIR=include
+
+.PHONY: build clean
 
 build:
-	$(CC) $(SOURCES) -lncurses -o main
+	$(CC) -I$(INCLUDE_DIR) -o $(BUILD_DIR)/main $(SOURCES) -lncurses
 
 clean:
-	rm -f main
+	rm -f $(BUILD_DIR)/main
